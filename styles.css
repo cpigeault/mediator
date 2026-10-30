@@ -16,6 +16,8 @@
 
   --barre:58px;          /* hauteur de la barre du bas */
   --marge:16px;
+  --colonne:430px;       /* largeur max : l'app reste un téléphone */
+  --doigt:44px;          /* cible tactile minimale */
 }
 
 *{box-sizing:border-box;}
@@ -29,17 +31,63 @@ body{
   overscroll-behavior-y:contain;
 }
 
+/* L'app est pensée pour un téléphone : on ne la laisse jamais s'étaler.
+   Au-delà de --colonne, elle reste centrée, comme dans la maquette. */
 #ecran{
   min-height:100%;
+  max-width:var(--colonne);
+  margin:0 auto;
   padding:calc(env(safe-area-inset-top) + 12px) var(--marge)
           calc(var(--barre) + env(safe-area-inset-bottom) + 24px);
 }
 body.sans-barre #ecran{padding-bottom:calc(env(safe-area-inset-bottom) + 24px);}
 
+/* Sur un écran large, on dessine le contour du téléphone. */
+@media (min-width:600px){
+  body{background:#120509;}
+  #ecran{
+    background:var(--bg);
+    border-inline:1px solid var(--line);
+    min-height:100vh;
+  }
+  #barre{border-inline:1px solid var(--line);}
+}
+
 button{font:inherit; color:inherit; background:none; border:0; padding:0; cursor:pointer;}
 a{color:var(--acc);}
 input,textarea{font:inherit; color:inherit;}
 :focus-visible{outline:2px solid var(--acc); outline-offset:2px; border-radius:6px;}
+
+/* ---------- confort tactile ---------- */
+
+/* touch-action: supprime l'attente de 300 ms que le navigateur s'impose au cas
+   où le doigt ferait un double-tap pour zoomer. Sans ça, chaque appui traîne. */
+button, a, .chip, label{touch-action:manipulation;}
+
+/* Pas de sélection de texte accidentelle en appui long sur les commandes —
+   mais les paroles et les grilles, elles, restent copiables. */
+button, #barre a, .chip, .niveaux, .six-cordes, .etoiles{
+  -webkit-user-select:none; user-select:none;
+}
+
+/* Retour au doigt : l'élément s'enfonce et pâlit tant qu'on appuie.
+   Sur un écran tactile il n'y a pas de survol — ce retour est le seul signal
+   qui dit « c'est bien pris ». */
+button:active, #barre a:active, .ligne .corps:active,
+.carte-accord:active, .tuto:active, .mini-ligne:active, .avancement:active{
+  opacity:.55;
+  transform:scale(.97);
+}
+.ajouter-flottant:active{transform:scale(.92); opacity:.85;}
+button, #barre a, .ligne .corps, .carte-accord, .tuto, .mini-ligne,
+.avancement, .ajouter-flottant{
+  transition:opacity .09s ease, transform .09s ease;
+}
+
+@media (prefers-reduced-motion:reduce){
+  *, *::before, *::after{transition-duration:.01ms !important; animation-duration:.01ms !important;}
+  button:active, #barre a:active, .ajouter-flottant:active{transform:none;}
+}
 
 /* ---------- briques communes ---------- */
 
@@ -74,8 +122,9 @@ input,textarea{font:inherit; color:inherit;}
 
 .chips{display:flex; gap:6px; flex-wrap:wrap; margin:12px 0 4px;}
 .chip{
-  border:1px solid var(--line); border-radius:999px; padding:5px 11px;
-  font-size:11.5px; color:var(--second); white-space:nowrap;
+  display:inline-flex; align-items:center; min-height:var(--doigt);
+  border:1px solid var(--line); border-radius:999px; padding:0 14px;
+  font-size:12px; color:var(--second); white-space:nowrap;
 }
 .chip[aria-pressed="true"]{
   background:var(--acc); border-color:var(--acc); color:var(--bg); font-weight:600;
@@ -115,9 +164,15 @@ input,textarea{font:inherit; color:inherit;}
 
 /* ---------- étoiles ---------- */
 
-.etoiles{display:inline-flex; gap:1px; flex:none;}
-.etoiles button{display:block; padding:3px 1px;}
-.etoiles svg{display:block; width:17px; height:17px; overflow:visible;}
+/* Les étoiles sont ce qu'on tape le plus dans l'app : 69 morceaux à noter.
+   Chaque étoile a donc sa propre cible de 44 px de haut, même si le dessin
+   est petit. On note souvent d'une main, l'autre sur le manche. */
+.etoiles{display:inline-flex; gap:0; flex:none;}
+.etoiles button{
+  display:grid; place-items:center;
+  min-width:36px; min-height:var(--doigt); border-radius:10px;
+}
+.etoiles svg{display:block; width:19px; height:19px; overflow:visible;}
 .etoiles button:nth-child(1) svg{transform:rotate(-7deg);}
 .etoiles button:nth-child(2) svg{transform:rotate(5deg) translateY(-.5px);}
 .etoiles button:nth-child(3) svg{transform:rotate(-3deg) translateY(.5px);}
@@ -159,9 +214,11 @@ input,textarea{font:inherit; color:inherit;}
 .ligne .grille.manque{color:var(--second); opacity:.6; font-style:italic;}
 
 .ajouter-flottant{
-  position:fixed; right:var(--marge);
+  /* Collé au bord droit de la colonne, pas au bord de la fenêtre. */
+  position:fixed;
+  right:max(var(--marge), calc(50% - var(--colonne) / 2 + var(--marge)));
   bottom:calc(var(--barre) + env(safe-area-inset-bottom) + 14px);
-  width:50px; height:50px; border-radius:17px;
+  width:54px; height:54px; border-radius:18px;
   background:var(--acc); color:var(--bg);
   display:grid; place-items:center;
   font-family:var(--display); font-weight:500; font-size:30px; line-height:0;
@@ -172,14 +229,17 @@ input,textarea{font:inherit; color:inherit;}
 /* ---------- barre du bas ---------- */
 
 #barre{
-  position:fixed; left:0; right:0; bottom:0; z-index:10;
-  display:flex; justify-content:space-around; align-items:center;
-  padding:8px 18px calc(10px + env(safe-area-inset-bottom));
+  position:fixed; bottom:0; z-index:10;
+  left:50%; transform:translateX(-50%);
+  width:100%; max-width:var(--colonne);
+  display:flex; justify-content:space-around; align-items:stretch;
+  padding:3px 12px calc(5px + env(safe-area-inset-bottom));
   border-top:1px solid var(--line); background:var(--elev);
 }
 #barre a{
-  display:grid; justify-items:center; gap:4px; text-decoration:none;
-  color:var(--second); font-size:9.5px; padding:2px 10px;
+  display:grid; justify-items:center; align-content:center; gap:4px;
+  text-decoration:none; color:var(--second); font-size:9.5px;
+  padding:0 14px; min-height:48px; border-radius:10px;
 }
 #barre a[aria-current="page"]{color:var(--acc);}
 
@@ -196,8 +256,8 @@ input,textarea{font:inherit; color:inherit;}
   background:var(--elev); border:1px solid var(--line); border-radius:11px; padding:4px;
 }
 .niveaux button{
-  flex:1; border-radius:8px; padding:7px 2px; font-size:11px;
-  color:var(--second); line-height:1.25;
+  flex:1; min-height:var(--doigt); border-radius:8px; padding:6px 2px;
+  font-size:11px; color:var(--second); line-height:1.25;
 }
 .niveaux button u{
   display:block; text-decoration:none; font-family:var(--mono);
@@ -258,10 +318,11 @@ input,textarea{font:inherit; color:inherit;}
   margin:0; font-family:var(--display); font-weight:500; font-size:22px;
   line-height:1.08; letter-spacing:.02em;
 }
-.reglages-jeu{display:flex; gap:5px; flex-wrap:wrap; margin-top:10px;}
+.reglages-jeu{display:flex; gap:6px; flex-wrap:wrap; margin-top:10px;}
 .reglages-jeu button{
-  font-family:var(--mono); font-size:10.5px; border:1px solid var(--line);
-  border-radius:6px; padding:5px 8px; color:var(--second);
+  display:inline-flex; align-items:center; min-height:40px;
+  font-family:var(--mono); font-size:11px; border:1px solid var(--line);
+  border-radius:8px; padding:0 11px; color:var(--second);
 }
 .reglages-jeu button.actif{border-color:var(--acc); color:var(--acc);}
 
@@ -400,8 +461,8 @@ svg.manche{display:block; width:176px; height:auto; margin:16px auto 0;}
 
 .six-cordes{display:flex; gap:5px; width:100%; margin-top:14px;}
 .six-cordes button{
-  flex:1; min-width:0; text-align:center;
-  border:1px solid var(--line); border-radius:9px; padding:9px 0 7px;
+  flex:1; min-width:0; min-height:52px; text-align:center;
+  border:1px solid var(--line); border-radius:9px; padding:8px 0 7px;
 }
 .six-cordes b{display:block; font-family:var(--display); font-weight:500; font-size:15px; line-height:1;}
 .six-cordes small{display:block; font-family:var(--mono); font-size:8.5px; color:var(--second); margin-top:3px;}

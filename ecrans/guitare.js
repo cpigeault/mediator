@@ -1,23 +1,27 @@
 /* Écran 07 — Ma guitare.
- * Deux modes : « sons de référence » (fait, il suffit du navigateur) et
- * « au micro » (la détection de hauteur n'est pas encore écrite).
+ * Deux modes : « sons de référence » (le navigateur joue la note, tu accordes
+ * à l'oreille) et « au micro » (l'app écoute et affiche l'écart).
  * Le dessin du manche relie chaque corde à son nom et à sa mécanique. */
 
-import { CHEVRON_GAUCHE } from '../lib/ui.js';
+import { CORDES, detecterFrequence, corde, mediane } from '../lib/hauteur.js';
 
-/* 6e corde en premier, comme partout ailleurs dans l'app. */
-const CORDES = [
-  { rang: '6e', nom: 'Mi', lettre: 'E', freq: 82.41 },
-  { rang: '5e', nom: 'La', lettre: 'A', freq: 110.0 },
-  { rang: '4e', nom: 'Ré', lettre: 'D', freq: 146.83 },
-  { rang: '3e', nom: 'Sol', lettre: 'G', freq: 196.0 },
-  { rang: '2e', nom: 'Si', lettre: 'B', freq: 246.94 },
-  { rang: '1re', nom: 'Mi', lettre: 'E', freq: 329.63 },
-];
-
+/* --- son de référence --- */
 let audio = null;
 let oscillateur = null;
 let cordeJouee = null;
+
+/* --- écoute du micro --- */
+let fluxMicro = null;
+let analyseur = null;
+let tampon = null;
+let boucle = null;
+let dernieres = [];
+let derniereAnalyse = 0;
+
+/* Une analyse coûte une dizaine de millisecondes : mesuré sur les six cordes.
+ * La relancer à chaque image (60 fois par seconde) saturerait le téléphone pour
+ * rien — 16 analyses par seconde suffisent largement à une aiguille. */
+const PERIODE_ANALYSE = 60;
 
 export function rendre() {
   return `
@@ -45,7 +49,7 @@ export function rendre() {
 
 function zoneReference() {
   return `
-    <div class="accordeur" style="margin-top:18px">
+    <div class="accordeur" style="margin-top:16px">
       <div class="note-jouee" id="note">—</div>
       <div class="detail-note" id="detail">Touche une corde ci-dessous pour l'entendre</div>
     </div>`;
@@ -53,20 +57,31 @@ function zoneReference() {
 
 function zoneMicro() {
   return `
-    <div class="vide" style="margin-top:18px">
-      <strong>Pas encore branché</strong>
-      La détection de hauteur au micro viendra ensuite : le navigateur donne les
-      échantillons bruts, il reste l'algorithme à écrire. En attendant, accorde à
-      l'oreille avec les sons de référence.
+    <div class="accordeur" style="margin-top:16px">
+      <div class="note-jouee" id="note">—</div>
+      <div class="detail-note" id="detail">Pince une corde</div>
+
+      <div class="jauge-accord" id="jauge">
+        <div class="graduation"></div>
+        <div class="centre"></div>
+        <div class="aiguille" id="aiguille" style="left:50%"></div>
+        <div class="bornes"><span>trop grave</span><span>juste</span><span>trop aigu</span></div>
+      </div>
+
+      <div class="consigne" id="consigne">
+        <button type="button" class="bouton-principal" data-ecouter="1" style="margin-top:4px">
+          Activer le micro
+        </button>
+      </div>
     </div>`;
 }
 
 /* Tête et manche vus de face. La corde en cours est en orange,
  * sa mécanique est cerclée.
  *
- * Les couleurs passent par style="" et non par des attributs comme fill="…" :
- * les attributs de présentation SVG n'acceptent pas var(), le dessin sortirait
- * en noir. Les classes CSS sont dans styles.css (.mch-*).
+ * Les couleurs passent par des classes CSS et non par des attributs comme
+ * fill="…" : les attributs de présentation SVG n'acceptent pas var(), le
+ * dessin sortirait en noir.
  */
 function manche(active = 0) {
   const X = [64, 79, 94, 108, 123, 138];
@@ -117,43 +132,151 @@ function manche(active = 0) {
 }
 
 export function brancher(vue) {
-  vue.addEventListener('click', (e) => {
+  vue.addEventListener('click', async (e) => {
     const mode = e.target.closest('[data-mode]');
     if (mode) {
       for (const b of vue.querySelectorAll('[data-mode]')) {
         b.setAttribute('aria-pressed', String(b === mode));
       }
-      arreter();
+      arreterSon();
+      arreterEcoute();
       vue.querySelector('#zone').innerHTML =
         mode.dataset.mode === 'micro' ? zoneMicro() : zoneReference();
+      majManche(vue, 0);
+      return;
+    }
+
+    if (e.target.closest('[data-ecouter]')) {
+      await demarrerEcoute(vue);
       return;
     }
 
     const bouton = e.target.closest('[data-corde]');
     if (!bouton) return;
 
+    // En mode micro, les pastilles ne jouent rien : elles ne sont qu'un repère.
+    if (vue.querySelector('[data-mode="micro"]')?.getAttribute('aria-pressed') === 'true') {
+      majManche(vue, Number(bouton.dataset.corde));
+      return;
+    }
+
     const i = Number(bouton.dataset.corde);
     if (cordeJouee === i) {
-      arreter();
-      rafraichir(vue, null);
+      arreterSon();
+      afficherReference(vue, null);
       return;
     }
     jouer(CORDES[i].freq);
     cordeJouee = i;
-    rafraichir(vue, i);
+    afficherReference(vue, i);
   });
 }
 
-function rafraichir(vue, i) {
+/* ---------- mode micro ---------- */
+
+async function demarrerEcoute(vue) {
+  const consigne = vue.querySelector('#consigne');
+  try {
+    fluxMicro = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        // Ces traitements sont faits pour la voix : ils déforment une note tenue.
+        echoCancellation: false,
+        noiseSuppression: false,
+        autoGainControl: false,
+      },
+    });
+  } catch (err) {
+    consigne.innerHTML =
+      `<b>Micro refusé</b><br>Autorise le micro dans les réglages du site, ` +
+      `ou accorde à l'oreille avec les sons de référence.`;
+    console.warn('micro :', err);
+    return;
+  }
+
+  audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+  if (audio.state === 'suspended') await audio.resume();
+
+  const source = audio.createMediaStreamSource(fluxMicro);
+  analyseur = audio.createAnalyser();
+  analyseur.fftSize = 2048;
+  source.connect(analyseur);
+  tampon = new Float32Array(analyseur.fftSize);
+  dernieres = [];
+
+  consigne.innerHTML = '<b>Pince une corde</b><br>L\'app devine laquelle.';
+  ecouter(vue);
+}
+
+function ecouter(vue) {
   const note = vue.querySelector('#note');
   const detail = vue.querySelector('#detail');
+  const jauge = vue.querySelector('#jauge');
+  const aiguille = vue.querySelector('#aiguille');
+  const consigne = vue.querySelector('#consigne');
+  if (!note || !analyseur) return;
+
+  const maintenant = performance.now();
+  if (maintenant - derniereAnalyse < PERIODE_ANALYSE) {
+    boucle = requestAnimationFrame(() => ecouter(vue));
+    return;
+  }
+  derniereAnalyse = maintenant;
+
+  analyseur.getFloatTimeDomainData(tampon);
+  const frequence = detecterFrequence(tampon, audio.sampleRate);
+  const trouvee = corde(frequence);
+
+  if (trouvee) {
+    // Médiane sur cinq mesures : l'aiguille arrête de trembler.
+    dernieres.push(trouvee.ecart);
+    if (dernieres.length > 5) dernieres.shift();
+    const ecart = mediane(dernieres);
+    const juste = Math.abs(ecart) < 5;
+
+    note.textContent = trouvee.corde.nom;
+    note.classList.toggle('juste', juste);
+    detail.textContent =
+      `${trouvee.corde.rang} corde · ${trouvee.corde.lettre} · ${trouvee.frequence.toFixed(1)} Hz`;
+
+    // ±50 cents couvre toute la largeur de la jauge.
+    const position = 50 + Math.max(-50, Math.min(50, ecart));
+    aiguille.style.left = `${position}%`;
+    jauge.classList.toggle('juste', juste);
+
+    consigne.innerHTML = juste
+      ? '<b>Juste.</b> Passe à la corde suivante.'
+      : ecart < 0
+        ? `<b>Un peu trop grave.</b> Tourne la mécanique vers toi, tout doucement.`
+        : `<b>Un peu trop aigu.</b> Détends la corde, tout doucement.`;
+
+    majManche(vue, trouvee.index);
+  } else {
+    dernieres = [];
+    note.classList.remove('juste');
+    jauge.classList.remove('juste');
+  }
+
+  boucle = requestAnimationFrame(() => ecouter(vue));
+}
+
+function arreterEcoute() {
+  if (boucle) cancelAnimationFrame(boucle);
+  boucle = null;
+  if (fluxMicro) for (const piste of fluxMicro.getTracks()) piste.stop();
+  fluxMicro = null;
+  analyseur = null;
+  dernieres = [];
+}
+
+/* ---------- mode sons de référence ---------- */
+
+function afficherReference(vue, i) {
+  const note = vue.querySelector('#note');
+  const detail = vue.querySelector('#detail');
+  majManche(vue, i ?? 0);
   for (const b of vue.querySelectorAll('[data-corde]')) {
     b.classList.toggle('active', Number(b.dataset.corde) === i);
   }
-  // Le dessin du manche suit la corde choisie.
-  const svg = vue.querySelector('.manche');
-  if (svg) svg.outerHTML = manche(i ?? 0);
-
   if (!note) return;
   if (i == null) {
     note.textContent = '—';
@@ -165,11 +288,15 @@ function rafraichir(vue, i) {
   }
 }
 
+function majManche(vue, i) {
+  const svg = vue.querySelector('.manche');
+  if (svg) svg.outerHTML = manche(i ?? 0);
+}
+
 /* Un son pur, pas un son de guitare : c'est plus facile à accorder dessus. */
 function jouer(frequence) {
-  arreter();
+  arreterSon();
   audio = audio || new (window.AudioContext || window.webkitAudioContext)();
-  // Les navigateurs démarrent le son en pause : il faut un geste de l'utilisateur.
   if (audio.state === 'suspended') audio.resume();
   const gain = audio.createGain();
   gain.gain.value = 0;
@@ -183,11 +310,10 @@ function jouer(frequence) {
   oscillateur._gain = gain;
 }
 
-function arreter() {
+function arreterSon() {
   if (!oscillateur) return;
   try {
-    const g = oscillateur._gain;
-    g.gain.linearRampToValueAtTime(0, audio.currentTime + 0.05);
+    oscillateur._gain.gain.linearRampToValueAtTime(0, audio.currentTime + 0.05);
     oscillateur.stop(audio.currentTime + 0.06);
   } catch {
     /* déjà arrêté */
@@ -196,7 +322,9 @@ function arreter() {
   cordeJouee = null;
 }
 
-/** Appelé par l'aiguillage quand on quitte l'écran : on coupe le son. */
+/** Appelé par l'aiguillage quand on quitte l'écran : on coupe tout.
+ *  Sans ça, le micro resterait allumé et le voyant du téléphone avec. */
 export function quitter() {
-  arreter();
+  arreterSon();
+  arreterEcoute();
 }
