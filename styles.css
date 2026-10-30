@@ -1,0 +1,419 @@
+/* Médiator — feuille de style unique.
+   Les couleurs et polices viennent de la maquette : ne les changer qu'ici. */
+
+:root{
+  --bg:#1E0712;          /* fond de l'app */
+  --elev:#2E0A1C;        /* surfaces : champs, cartes */
+  --plum:#430B2A;        /* blocs en relief : rythme, tuto, note */
+  --line:#53203A;        /* filets */
+  --ink:#FBF1F4;         /* texte principal */
+  --second:#9AB8D5;      /* texte secondaire + étoiles : ce qui informe */
+  --acc:#E75621;         /* accent : ce sur quoi on agit */
+
+  --display:"Bahnschrift SemiCondensed","Bahnschrift","Franklin Gothic Medium","Oswald","Arial Narrow",sans-serif;
+  --body:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",sans-serif;
+  --mono:"Cascadia Mono","Consolas",ui-monospace,"SF Mono",monospace;
+
+  --barre:58px;          /* hauteur de la barre du bas */
+  --marge:16px;
+}
+
+*{box-sizing:border-box;}
+
+html,body{height:100%;}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:var(--body); font-size:14px; line-height:1.45;
+  -webkit-font-smoothing:antialiased;
+  -webkit-tap-highlight-color:transparent;
+  overscroll-behavior-y:contain;
+}
+
+#ecran{
+  min-height:100%;
+  padding:calc(env(safe-area-inset-top) + 12px) var(--marge)
+          calc(var(--barre) + env(safe-area-inset-bottom) + 24px);
+}
+body.sans-barre #ecran{padding-bottom:calc(env(safe-area-inset-bottom) + 24px);}
+
+button{font:inherit; color:inherit; background:none; border:0; padding:0; cursor:pointer;}
+a{color:var(--acc);}
+input,textarea{font:inherit; color:inherit;}
+:focus-visible{outline:2px solid var(--acc); outline-offset:2px; border-radius:6px;}
+
+/* ---------- briques communes ---------- */
+
+.titre-ecran{
+  display:flex; align-items:flex-end; justify-content:space-between; gap:12px;
+  padding:6px 0 14px;
+}
+.titre-ecran h1{
+  margin:0; font-family:var(--display); font-weight:500; font-size:27px;
+  line-height:1; letter-spacing:.015em;
+}
+.titre-ecran .meta{
+  font-family:var(--mono); font-size:10px; letter-spacing:.09em;
+  text-transform:uppercase; color:var(--second); white-space:nowrap;
+}
+
+.retour{
+  display:inline-flex; align-items:center; gap:7px;
+  padding:8px 0 10px; color:var(--second); font-size:12px;
+}
+.retour svg{flex:none;}
+
+.champ-recherche{
+  display:flex; align-items:center; gap:9px; width:100%;
+  background:var(--elev); border:1px solid var(--line); border-radius:10px;
+  padding:10px 12px; color:var(--second); font-size:13px;
+}
+.champ-recherche input{
+  flex:1; min-width:0; background:none; border:0; outline:none; color:var(--ink);
+}
+.champ-recherche input::placeholder{color:var(--second);}
+
+.chips{display:flex; gap:6px; flex-wrap:wrap; margin:12px 0 4px;}
+.chip{
+  border:1px solid var(--line); border-radius:999px; padding:5px 11px;
+  font-size:11.5px; color:var(--second); white-space:nowrap;
+}
+.chip[aria-pressed="true"]{
+  background:var(--acc); border-color:var(--acc); color:var(--bg); font-weight:600;
+}
+
+.bouton-principal{
+  display:block; width:100%; margin-top:16px; text-align:center;
+  background:var(--acc); color:var(--bg); border-radius:12px; padding:14px;
+  font-weight:700; font-size:14px;
+}
+.bouton-fantome{
+  display:block; width:100%; margin-top:10px; text-align:center;
+  border:1px solid var(--line); border-radius:12px; padding:13px;
+  color:var(--second); font-weight:600; font-size:13px;
+}
+
+.etiquettes{display:flex; gap:5px; flex-wrap:wrap; margin-top:9px;}
+.etiquette{
+  font-family:var(--mono); font-size:9.5px; letter-spacing:.07em; text-transform:uppercase;
+  border:1px solid var(--line); border-radius:5px; padding:4px 8px; color:var(--second);
+}
+
+.inter-titre{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  margin:20px 0 9px; font-family:var(--mono); font-size:9.5px; letter-spacing:.13em;
+  text-transform:uppercase; color:var(--second);
+}
+
+.bloc{background:var(--plum); border-radius:11px; padding:11px 13px;}
+.bloc p{margin:0; font-size:12.5px;}
+.vide{
+  border:1px dashed var(--line); border-radius:11px; padding:20px 16px;
+  text-align:center; color:var(--second); font-size:12.5px;
+}
+.vide strong{display:block; color:var(--ink); font-size:14px; margin-bottom:5px;}
+
+/* ---------- étoiles ---------- */
+
+.etoiles{display:inline-flex; gap:1px; flex:none;}
+.etoiles button{display:block; padding:3px 1px;}
+.etoiles svg{display:block; width:17px; height:17px; overflow:visible;}
+.etoiles button:nth-child(1) svg{transform:rotate(-7deg);}
+.etoiles button:nth-child(2) svg{transform:rotate(5deg) translateY(-.5px);}
+.etoiles button:nth-child(3) svg{transform:rotate(-3deg) translateY(.5px);}
+.etoiles path{fill:none; stroke:var(--line); stroke-width:1.7; stroke-linejoin:round;}
+.etoiles button.pleine path{fill:var(--second); stroke:var(--second);}
+.etoiles.grande svg{width:21px; height:21px;}
+
+/* ---------- liste de morceaux ---------- */
+
+.avancement{
+  display:flex; align-items:center; gap:12px; width:100%; text-align:left;
+  background:var(--plum); border-radius:11px; padding:10px 12px; margin-top:12px;
+}
+.avancement .txt{flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;}
+.avancement b{font-size:12.5px;}
+.avancement span{font-size:11px; color:var(--second);}
+.avancement .jauge{height:3px; border-radius:2px; background:rgba(251,241,244,.16); margin-top:4px;}
+.avancement .jauge i{display:block; height:3px; border-radius:2px; background:var(--second);}
+.avancement .fleche{color:var(--acc); font-size:16px; flex:none;}
+
+.ligne{
+  display:flex; align-items:center; gap:12px;
+  padding:11px 0; border-bottom:1px solid var(--line);
+}
+.ligne .corps{flex:1; min-width:0; text-align:left;}
+.ligne .titre{
+  font-weight:600; font-size:13.5px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.ligne .artiste{
+  font-size:11.5px; color:var(--second);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.ligne .grille{
+  font-family:var(--mono); font-size:10.5px; color:var(--acc);
+  letter-spacing:.03em; margin-top:2px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.ligne .grille.manque{color:var(--second); opacity:.6; font-style:italic;}
+
+.ajouter-flottant{
+  position:fixed; right:var(--marge);
+  bottom:calc(var(--barre) + env(safe-area-inset-bottom) + 14px);
+  width:50px; height:50px; border-radius:17px;
+  background:var(--acc); color:var(--bg);
+  display:grid; place-items:center;
+  font-family:var(--display); font-weight:500; font-size:30px; line-height:0;
+  padding-bottom:3px;
+  box-shadow:0 10px 24px -10px rgba(231,86,33,.65);
+}
+
+/* ---------- barre du bas ---------- */
+
+#barre{
+  position:fixed; left:0; right:0; bottom:0; z-index:10;
+  display:flex; justify-content:space-around; align-items:center;
+  padding:8px 18px calc(10px + env(safe-area-inset-bottom));
+  border-top:1px solid var(--line); background:var(--elev);
+}
+#barre a{
+  display:grid; justify-items:center; gap:4px; text-decoration:none;
+  color:var(--second); font-size:9.5px; padding:2px 10px;
+}
+#barre a[aria-current="page"]{color:var(--acc);}
+
+/* ---------- fiche d'un morceau ---------- */
+
+.titre-morceau{
+  font-family:var(--display); font-weight:500; font-size:30px; line-height:.98;
+  letter-spacing:.01em;
+}
+.sous-titre{font-size:12px; color:var(--second); margin-top:3px;}
+
+.niveaux{
+  display:flex; gap:4px; margin-top:14px;
+  background:var(--elev); border:1px solid var(--line); border-radius:11px; padding:4px;
+}
+.niveaux button{
+  flex:1; border-radius:8px; padding:7px 2px; font-size:11px;
+  color:var(--second); line-height:1.25;
+}
+.niveaux button u{
+  display:block; text-decoration:none; font-family:var(--mono);
+  font-size:8.5px; letter-spacing:.06em; opacity:.8;
+}
+.niveaux button[aria-pressed="true"]{background:var(--acc); color:var(--bg); font-weight:600;}
+
+.bande-accords{display:flex; gap:8px;}
+.carte-accord{
+  flex:1; min-width:0; background:var(--elev); border:1px solid var(--line);
+  border-radius:10px; padding:8px 2px 7px; text-align:center;
+}
+.carte-accord .nom{
+  display:block; font-family:var(--display); font-weight:500; font-size:16px;
+  line-height:1; letter-spacing:.03em;
+}
+.carte-accord svg{display:block; margin:5px auto 0; width:48px; height:57px;}
+
+/* rythme : 4 paires de flèches, une par temps */
+.rythme{display:grid; grid-template-columns:repeat(4,1fr); gap:7px;}
+.rythme .temps{
+  display:flex; flex-direction:column; align-items:center; gap:1px;
+  border-radius:7px; padding:4px 0 5px; background:rgba(251,241,244,.05);
+}
+.rythme .num{font-family:var(--mono); font-size:9px; color:var(--second);}
+.rythme .paire{display:flex; gap:3px;}
+.rythme .fl{font-size:19px; line-height:1.05; color:var(--ink);}
+.rythme .fl.forte{color:var(--acc); font-weight:700;}
+.rythme .fl.vide{opacity:.22;}
+
+.tuto{
+  display:flex; gap:11px; align-items:center; width:100%; text-align:left;
+  background:var(--plum); border-radius:11px; padding:10px;
+}
+.tuto .vignette{
+  position:relative; width:84px; height:50px; flex:none; border-radius:7px;
+  background:var(--bg); display:grid; place-items:center;
+}
+.tuto .vignette i{
+  display:block; width:0; height:0; border-left:13px solid var(--acc);
+  border-top:8px solid transparent; border-bottom:8px solid transparent; margin-left:4px;
+}
+.tuto .txt{min-width:0;}
+.tuto .txt b{display:block; font-size:12.5px; line-height:1.3;}
+.tuto .txt span{display:block; font-size:10.5px; color:var(--second); margin-top:2px;}
+
+/* ---------- mode jeu ---------- */
+
+.haut-jeu{
+  display:flex; align-items:center; gap:11px;
+  padding:4px 0 10px; border-bottom:1px solid var(--line);
+}
+.haut-jeu .bouton-retour{
+  display:grid; place-items:center; width:38px; height:38px; flex:none;
+  border:1px solid var(--line); border-radius:10px; color:var(--acc);
+}
+.haut-jeu h1{
+  margin:0; font-family:var(--display); font-weight:500; font-size:22px;
+  line-height:1.08; letter-spacing:.02em;
+}
+.reglages-jeu{display:flex; gap:5px; flex-wrap:wrap; margin-top:10px;}
+.reglages-jeu button{
+  font-family:var(--mono); font-size:10.5px; border:1px solid var(--line);
+  border-radius:6px; padding:5px 8px; color:var(--second);
+}
+.reglages-jeu button.actif{border-color:var(--acc); color:var(--acc);}
+
+.partition{font-family:var(--mono); line-height:1.5; padding:14px 0 0;}
+.partition .l{display:block; white-space:pre; overflow-x:auto;}
+.partition .accords{color:var(--acc); font-weight:700;}
+.partition .section{
+  color:var(--second); letter-spacing:.1em; text-transform:uppercase;
+  font-size:.82em; margin:15px 0 5px;
+}
+.partition .section:first-child{margin-top:0;}
+
+/* ---------- détail d'un accord ---------- */
+
+.accord-grand{
+  display:flex; gap:14px; align-items:center; margin-top:8px; padding:13px;
+  background:var(--elev); border:1px solid var(--line); border-radius:14px;
+}
+.accord-grand svg{width:104px; height:124px; flex:none;}
+.accord-grand .texte{font-size:12px;}
+.fiches{display:grid; gap:9px; margin:13px 0 0;}
+.fiches div{display:flex; gap:11px; font-size:12px;}
+.fiches dt{
+  flex:none; width:64px; font-family:var(--mono); font-size:9.5px; letter-spacing:.07em;
+  text-transform:uppercase; color:var(--second); padding-top:2px;
+}
+.fiches dd{margin:0;}
+.versions{display:flex; gap:9px; margin-top:8px;}
+.version{
+  flex:1; min-width:0; background:var(--elev); border:1px solid var(--line);
+  border-radius:10px; padding:9px 7px; text-align:center;
+}
+.version .nom{
+  font-family:var(--mono); font-size:9.5px; letter-spacing:.07em;
+  text-transform:uppercase; color:var(--acc);
+}
+.version svg{display:block; margin:4px auto 2px; width:58px; height:69px;}
+.version .quand{font-size:10.5px; color:var(--second); line-height:1.35;}
+
+.mini-ligne{
+  display:flex; justify-content:space-between; align-items:center; gap:10px;
+  width:100%; text-align:left;
+  padding:9px 0; border-bottom:1px solid var(--line); font-size:12.5px;
+}
+
+/* ---------- tableau des accords ---------- */
+
+table.tableau{width:100%; border-collapse:collapse; table-layout:fixed; margin-top:4px;}
+.tableau th{
+  font-family:var(--mono); font-size:9px; letter-spacing:.09em; text-transform:uppercase;
+  color:var(--second); font-weight:400; padding:0 0 7px; text-align:center;
+}
+.tableau th:first-child, .tableau td:first-child{width:28px;}
+.tableau th:first-child{text-align:left;}
+.tableau td{padding:3px 2px; text-align:center;}
+.tableau td:first-child{
+  font-family:var(--display); font-weight:500; font-size:18px; text-align:left;
+  letter-spacing:.03em; color:var(--second);
+}
+.tableau td button{
+  display:block; width:100%; font-family:var(--mono); font-size:11px;
+  border:1px solid var(--line); border-radius:6px; padding:7px 0; color:var(--second);
+}
+.tableau td button.connu{
+  border-color:var(--acc); color:var(--acc); background:rgba(231,86,33,.1); font-weight:700;
+}
+.legende{margin-top:14px; background:var(--plum); border-radius:11px; padding:11px 13px;}
+.legende div{display:flex; gap:10px; font-size:11.5px; padding:2px 0;}
+.legende dt{flex:none; width:46px; font-family:var(--mono); font-size:10.5px; color:var(--acc);}
+.legende dd{margin:0;}
+.legende .formule{font-family:var(--mono); color:var(--second);}
+
+/* ---------- formulaire ---------- */
+
+.groupe{margin-top:14px;}
+.groupe .etiq{
+  display:block; font-family:var(--mono); font-size:9.5px; letter-spacing:.11em;
+  text-transform:uppercase; color:var(--second); margin-bottom:5px;
+}
+.groupe input, .groupe textarea{
+  display:block; width:100%; background:var(--elev); border:1px solid var(--line);
+  border-radius:9px; padding:11px 12px; font-size:13.5px; outline:none;
+}
+.groupe textarea{font-family:var(--mono); font-size:12px; line-height:1.5; min-height:120px; resize:vertical;}
+.groupe input:focus, .groupe textarea:focus{border-color:var(--acc);}
+.detectes{display:flex; gap:5px; flex-wrap:wrap; margin-top:7px;}
+.detectes b{
+  font-family:var(--mono); font-size:10.5px; font-weight:600; border-radius:6px; padding:4px 8px;
+  background:rgba(231,86,33,.14); color:var(--acc); border:1px solid rgba(231,86,33,.35);
+}
+.aide{font-size:11px; color:var(--second); margin-top:6px;}
+
+/* ---------- ma guitare ---------- */
+
+.accordeur{display:flex; flex-direction:column; align-items:center;}
+.note-jouee{
+  font-family:var(--display); font-weight:600; font-size:72px; line-height:.9;
+  letter-spacing:.01em;
+}
+.note-jouee.juste{color:var(--acc);}
+.detail-note{font-family:var(--mono); font-size:11px; color:var(--second); letter-spacing:.06em;}
+.jauge-accord{position:relative; width:100%; height:48px; margin-top:16px;}
+.jauge-accord .graduation{
+  position:absolute; left:0; right:0; top:15px; height:16px;
+  background-image:repeating-linear-gradient(to right, var(--line) 0 1px, transparent 1px 10%);
+}
+.jauge-accord .centre{
+  position:absolute; left:50%; top:5px; width:2px; height:36px;
+  background:var(--second); transform:translateX(-1px);
+}
+.jauge-accord .aiguille{
+  position:absolute; top:0; width:3px; height:46px; border-radius:2px;
+  background:var(--second); transition:left .12s linear;
+}
+.jauge-accord.juste .aiguille{background:var(--acc); box-shadow:0 0 14px rgba(231,86,33,.55);}
+.jauge-accord .bornes{
+  position:absolute; left:0; right:0; bottom:-4px; display:flex; justify-content:space-between;
+  font-family:var(--mono); font-size:9px; color:var(--second);
+}
+.consigne{margin-top:16px; font-size:12.5px; text-align:center; color:var(--second); line-height:1.4;}
+.consigne b{color:var(--ink); font-weight:600;}
+
+svg.manche{display:block; width:176px; height:auto; margin:16px auto 0;}
+.mch-tete{fill:var(--plum); stroke:var(--line); stroke-width:1.2;}
+.mch-bois{fill:var(--elev); stroke:var(--line); stroke-width:1.2;}
+.mch-sillet{fill:var(--second);}
+.mch-mecanique{fill:var(--plum); stroke:var(--line); stroke-width:1.2;}
+.mch-choisie{fill:none; stroke:var(--acc); stroke-width:1.6;}
+.mch-axe{fill:none; stroke:var(--line); stroke-width:1.5;}
+.mch-attache{fill:none; stroke:var(--second); stroke-width:.7; opacity:.4;}
+.mch-corde{stroke:var(--second); opacity:.75;}
+.mch-corde.active{stroke:var(--acc); opacity:1;}
+.mch-rang{fill:var(--second); font-family:var(--mono); font-size:7.5px; opacity:.65;}
+.mch-nom{fill:var(--ink); font-family:var(--mono); font-size:10px;}
+.mch-nom.active{fill:var(--acc); font-weight:700;}
+
+.six-cordes{display:flex; gap:5px; width:100%; margin-top:14px;}
+.six-cordes button{
+  flex:1; min-width:0; text-align:center;
+  border:1px solid var(--line); border-radius:9px; padding:9px 0 7px;
+}
+.six-cordes b{display:block; font-family:var(--display); font-weight:500; font-size:15px; line-height:1;}
+.six-cordes small{display:block; font-family:var(--mono); font-size:8.5px; color:var(--second); margin-top:3px;}
+.six-cordes button.active{background:var(--plum); border-color:var(--acc);}
+
+/* ---------- diagrammes d'accord (générés par lib/diagramme.js) ---------- */
+
+.diagramme{overflow:visible;}
+.dg-corde, .dg-case{stroke:var(--second); stroke-width:1.5; stroke-linecap:square;}
+.dg-sillet{fill:var(--second);}
+.dg-point, .dg-barre{fill:var(--acc);}
+.dg-ouvert{fill:none; stroke:var(--second); stroke-width:1.3;}
+.dg-muet{fill:none; stroke:var(--second); stroke-width:1.4; opacity:.7;}
+.dg-num{fill:var(--bg); font-family:var(--mono); font-size:9px; font-weight:700;}
+.dg-pos{fill:var(--second); font-family:var(--mono); font-size:11px;}
+.accord-grand .dg-corde, .accord-grand .dg-case{stroke-width:1.6;}

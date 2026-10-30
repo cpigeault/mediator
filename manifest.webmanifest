@@ -1,0 +1,16 @@
+{
+  "name": "Médiator",
+  "short_name": "Médiator",
+  "description": "Le carnet de tes morceaux de guitare.",
+  "lang": "fr",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1E0712",
+  "theme_color": "#1E0712",
+  "icons": [
+    { "src": "icone.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icone.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}

@@ -1,0 +1,8 @@
+# Fichiers que Windows et les éditeurs sèment un peu partout
+Thumbs.db
+desktop.ini
+.DS_Store
+*~
+*.swp
+
+# Rien d'autre à ignorer : ce projet n'a aucune dépendance à installer.
