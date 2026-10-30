@@ -5,7 +5,7 @@
  * effacé et les fichiers sont retéléchargés.
  */
 
-const VERSION = 'mediator-1';
+const VERSION = 'mediator-2';
 
 const FICHIERS = [
   '.',
@@ -19,6 +19,7 @@ const FICHIERS = [
   'lib/ui.js',
   'lib/accords.js',
   'lib/diagramme.js',
+  'lib/transposition.js',
   'ecrans/morceaux.js',
   'ecrans/fiche.js',
   'ecrans/modejeu.js',

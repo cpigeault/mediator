@@ -97,6 +97,7 @@ input,textarea{font:inherit; color:inherit;}
   font-family:var(--mono); font-size:9.5px; letter-spacing:.07em; text-transform:uppercase;
   border:1px solid var(--line); border-radius:5px; padding:4px 8px; color:var(--second);
 }
+.etiquette.transposee{border-color:var(--acc); color:var(--acc);}
 
 .inter-titre{
   display:flex; align-items:center; justify-content:space-between; gap:10px;
@@ -215,7 +216,7 @@ input,textarea{font:inherit; color:inherit;}
 }
 .carte-accord svg{display:block; margin:5px auto 0; width:48px; height:57px;}
 
-/* rythme : 4 paires de flèches, une par temps */
+/* rythme : une paire de flèches par temps (3 ou 4 selon le morceau) */
 .rythme{display:grid; grid-template-columns:repeat(4,1fr); gap:7px;}
 .rythme .temps{
   display:flex; flex-direction:column; align-items:center; gap:1px;

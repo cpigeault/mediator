@@ -3,6 +3,7 @@
 
 import * as store from '../lib/store.js';
 import { estLigneAccords } from '../lib/accords.js';
+import { transposer, signe } from '../lib/transposition.js';
 import { echappe, CHEVRON_GAUCHE } from '../lib/ui.js';
 
 const TAILLES = [11, 12.5, 14, 16];
@@ -12,6 +13,7 @@ export function rendre(id) {
   if (!m) return `<div class="vide"><strong>Morceau introuvable</strong></div>`;
 
   const taille = store.reglages().taillePartition || 12.5;
+  const t = m.transposition || 0;
 
   return `
     <div class="haut-jeu">
@@ -22,9 +24,10 @@ export function rendre(id) {
     </div>
 
     <div class="reglages-jeu">
-      <button type="button" class="${m.capo ? 'actif' : ''}" disabled>Capo ${m.capo || 0}</button>
-      <button type="button" data-ton="-1">−1 ton</button>
-      <button type="button" data-ton="1">+1 ton</button>
+      ${m.capo ? `<button type="button" class="actif" disabled>Capo ${m.capo}</button>` : ''}
+      <button type="button" data-ton="-1" aria-label="Un demi-ton plus bas">−½ ton</button>
+      <button type="button" data-ton="1" aria-label="Un demi-ton plus haut">+½ ton</button>
+      ${t ? `<button type="button" data-ton="0" class="actif">Transposé ${signe(t)} ✕</button>` : ''}
       <button type="button" data-taille="-1" aria-label="Réduire le texte">A−</button>
       <button type="button" data-taille="1" aria-label="Agrandir le texte">A+</button>
     </div>
@@ -36,14 +39,17 @@ export function rendre(id) {
 }
 
 function partition(m) {
-  const texte = m.grilleTexte?.trim();
-  if (!texte) {
+  const brut = m.grilleTexte?.trim();
+  if (!brut) {
     return `<div class="vide" style="margin-top:10px">
       <strong>Pas encore de grille</strong>
       Colle les paroles et les accords, ils s'afficheront ici.
       <a class="bouton-fantome" href="#/modifier/${m.id}">Coller la grille</a>
     </div>`;
   }
+
+  const texte = transposer(brut, m.transposition || 0, estLigneAccords);
+
   return texte
     .split('\n')
     .map((ligne) => {
@@ -71,12 +77,14 @@ export function brancher(vue, id) {
 
     const ton = e.target.closest('[data-ton]');
     if (ton) {
-      // La transposition demande de recalculer chaque accord de la grille.
-      // Pas encore fait : on le dit plutôt que de faire semblant.
-      ton.textContent = 'bientôt';
-      setTimeout(() => {
-        ton.textContent = Number(ton.dataset.ton) > 0 ? '+1 ton' : '−1 ton';
-      }, 1200);
+      const pas = Number(ton.dataset.ton);
+      const actuel = store.morceau(id).transposition || 0;
+      // pas = 0 : le bouton « Transposé +2 ✕ » remet la grille d'origine.
+      // Au-delà de ±6 demi-tons, on revient au même endroit par l'autre côté.
+      const vise = pas === 0 ? 0 : Math.max(-6, Math.min(6, actuel + pas));
+      store.majMorceau(id, { transposition: vise });
+      vue.innerHTML = rendre(id);
+      return;
     }
   });
 

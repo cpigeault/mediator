@@ -4,7 +4,8 @@
 import * as store from '../lib/store.js';
 import { ACCORDS } from '../lib/accords.js';
 import { diagramme } from '../lib/diagramme.js';
-import { echappe, etoiles, fleches, CHEVRON_GAUCHE } from '../lib/ui.js';
+import { transposerAccord, signe } from '../lib/transposition.js';
+import { echappe, etoiles, fleches, signature, CHEVRON_GAUCHE } from '../lib/ui.js';
 
 const NIVEAUX = [
   { n: 1, libelle: 'Je déchiffre' },
@@ -25,6 +26,7 @@ export function rendre(id) {
     <div class="etiquettes">
       ${m.capo ? `<span class="etiquette">Capo · ${m.capo}</span>` : ''}
       ${m.accords?.length ? `<span class="etiquette">${m.accords.length} accords</span>` : ''}
+      ${m.transposition ? `<span class="etiquette transposee">Transposé ${signe(m.transposition)}</span>` : ''}
       <span class="etiquette">${m.maitrise ? NIVEAUX[m.maitrise - 1].libelle : 'Pas encore noté'}</span>
     </div>
 
@@ -49,7 +51,11 @@ export function rendre(id) {
 }
 
 function sectionAccords(m) {
-  const accords = m.accords || [];
+  // Si le morceau est transposé, on montre les accords tels qu'on va les jouer,
+  // pas tels qu'ils sont écrits dans la grille.
+  const accords = (m.accords || []).map((a) =>
+    m.transposition ? transposerAccord(a, m.transposition) : a
+  );
   if (!accords.length) {
     return `
       <div class="inter-titre"><span>1 — Les accords</span></div>
@@ -88,30 +94,26 @@ function sectionRythme(m) {
       <div class="inter-titre"><span>2 — Le rythme</span></div>
       <div class="vide">
         <strong>Rythme pas encore noté</strong>
-        Quatre paires de flèches, une par temps.
+        Regarde le tuto ci-dessous, puis note-le.
       </div>`;
   }
   return `
-    <div class="inter-titre"><span>2 — Le rythme</span><span>4 temps</span></div>
+    <div class="inter-titre"><span>2 — Le rythme</span><span>${signature(m.rythme)}</span></div>
     ${fleches(m.rythme)}`;
 }
 
+/* Le tuto n'est pas un lien stocké mais une recherche calculée : elle ne peut
+ * pas pourrir, et elle renvoie les meilleurs tutos du jour. Quand un lien a été
+ * épinglé à la main, c'est lui qui s'ouvre. */
 function sectionTuto(m) {
-  if (!m.tutoUrl) {
-    return `
-      <div class="inter-titre"><span>3 — Si le rythme résiste</span></div>
-      <div class="vide">
-        <strong>Aucun tuto enregistré</strong>
-        Colle un lien YouTube dans la fiche du morceau.
-      </div>`;
-  }
+  const { url, epingle } = store.lienTuto(m);
   return `
     <div class="inter-titre"><span>3 — Si le rythme résiste</span></div>
-    <a class="tuto" href="${echappe(m.tutoUrl)}" target="_blank" rel="noopener">
+    <a class="tuto" href="${echappe(url)}" target="_blank" rel="noopener">
       <span class="vignette"><i></i></span>
       <span class="txt">
-        <b>Tuto du morceau</b>
-        <span>Ouvre YouTube</span>
+        <b>${epingle ? 'Ton tuto' : 'Chercher un tuto'}</b>
+        <span>${epingle ? 'La vidéo que tu as épinglée' : `« ${echappe(m.titre)} tuto guitare » sur YouTube`}</span>
       </span>
     </a>`;
 }
