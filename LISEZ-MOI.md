@@ -67,6 +67,29 @@ Le `sw.js` garde les fichiers en mémoire pour le mode hors-ligne. Si une
 modification ne s'affiche pas sur le téléphone, incrémenter `VERSION` en haut de
 `sw.js` (`mediator-1` → `mediator-2`).
 
+### Noter un rythme
+
+Dans `data/morceaux.json`, ou directement dans la fiche du morceau via
+*Modifier*. Une paire de flèches par temps, séparées par un espace :
+
+```
+"rythme": "Du DU dU DU"
+```
+
+`D` = vers le bas, `U` = vers le haut. **Majuscule = la main touche les cordes,
+minuscule = elle continue son mouvement à vide.** Trois ou quatre paires, selon
+que le morceau est à 3 temps (une valse) ou à 4.
+
+Quelques exemples déjà en place :
+
+| Rythme | Donne | Morceaux |
+|---|---|---|
+| `Du DU dU DU` | ↓ · ↓↑ · ↑↓↑ | le gratté folk, le plus courant |
+| `Du Du Du` | ↓ ↓ ↓ sur 3 temps | les valses : La Bohème, Mon amant de Saint-Jean |
+| `dU dU dU dU` | les montées seules | le reggae : Three Little Birds |
+| `Du Du Du Du` | quatre descentes | la marche : Santiano |
+| `Du du Du du` | sur 1 et 3 | les morceaux lents : Imagine, Chasing Cars |
+
 ## Ce qui marche
 
 - les 69 morceaux, triés alphabétiquement, recherche par titre, artiste ou accord
@@ -78,13 +101,16 @@ modification ne s'affiche pas sur le téléphone, incrémenter `VERSION` en haut
 - le mode jeu : paroles et accords alignés, taille du texte réglable
 - l'accordeur en **sons de référence** : six notes pures jouées par le navigateur
 - le dessin du manche, qui relie chaque corde à son nom et à sa mécanique
+- **la transposition** : `−½ ton` / `+½ ton` en mode jeu, mémorisée par morceau,
+  en conservant l'alignement des accords au-dessus des syllabes
+- **le rythme en flèches** : 13 morceaux renseignés, 3 ou 4 temps
+- **le bouton tuto** : une recherche YouTube calculée depuis le titre, donc
+  valable pour les 69 morceaux et impossible à casser
 
 ## Ce qui reste à faire
 
 - **l'accordeur au micro** : l'algorithme de détection de hauteur n'est pas écrit
-- **la transposition** (`−1 ton` / `+1 ton`) : les boutons existent, ils ne font rien
-- **la recherche de tuto YouTube** : prévue via l'API YouTube, demande une clé gratuite
 - **le partage depuis le navigateur** vers l'app (Web Share Target)
-- **le rythme** : aucun morceau n'en a encore un. Format `Du DU dU DU` —
-  4 paires, une par temps, majuscule = corde touchée, minuscule = main à vide
-- **58 grilles** à coller, au fil des soirs
+- **épingler un tuto** : le champ existe dans *Modifier*, mais rien ne propose
+  encore une liste de vidéos à choisir
+- **56 rythmes** et **58 grilles** à remplir, au fil des soirs
